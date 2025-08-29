@@ -609,168 +609,282 @@ export default function Dashboard() {
         
         {activeTab === 'energy-trading' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold">Energy Trading Marketplace</h2>
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                    🔒 REAL TRADES
+            {/* Enhanced Header Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">Energy Trading Marketplace</h2>
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium border border-green-200">
+                      🔒 SECURE TRADES
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mb-4">Connect directly with neighbors to trade renewable energy. Smart matching, instant transfers, fair pricing.</p>
+                  
+                  {/* Market Stats */}
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-blue-600">{energyOffers.length}</p>
+                      <p className="text-xs text-gray-500">Active Offers</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">{energyRequests.length}</p>
+                      <p className="text-xs text-gray-500">Energy Requests</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-purple-600">₹{marketData?.supply && marketData?.demand ? ((marketData.supply / marketData.demand) * 4.5).toFixed(1) : '4.5'}</p>
+                      <p className="text-xs text-gray-500">Avg Price/kWh</p>
+                    </div>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">Live energy trading with verified households. Contact details shared upon trade agreement.</p>
+                <div className="flex flex-col gap-3">
+                  <Button onClick={() => setShowCreateTradeDialog(true)} data-testid="button-create-trade" className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium shadow-lg">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Trade
+                  </Button>
+                  <Button variant="outline" onClick={handleRefresh} size="sm" data-testid="button-refresh-trades">
+                    <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
               </div>
-              <Button onClick={() => setShowCreateTradeDialog(true)} data-testid="button-create-trade">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Trade Offer
-              </Button>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6">
+              <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-green-600" />
-                    Available Energy Offers ({energyOffers.length})
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <Zap className="h-5 w-5 text-green-600" />
+                    </div>
+                    Energy Available
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                      {energyOffers.length}
+                    </span>
                   </h3>
-                  <select 
-                    value={offerFilter} 
-                    onChange={(e) => setOfferFilter(e.target.value as 'all' | 'cheapest' | 'biggest')}
-                    className="text-sm border border-gray-300 rounded px-2 py-1"
-                  >
-                    <option value="all">All Offers</option>
-                    <option value="cheapest">Cheapest First</option>
-                    <option value="biggest">Biggest Power</option>
-                  </select>
+                  <Select value={offerFilter} onValueChange={(value) => setOfferFilter(value as 'all' | 'cheapest' | 'biggest')}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Offers</SelectItem>
+                      <SelectItem value="cheapest">💰 Best Price</SelectItem>
+                      <SelectItem value="biggest">⚡ Most Power</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-3">
                   {tradesLoading ? (
-                    <div className="p-3 border border-gray-200 rounded text-center text-gray-500">
-                      Loading energy offers...
+                    <div className="space-y-3">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="p-4 border border-gray-200 rounded-lg animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      ))}
                     </div>
                   ) : energyOffers.length > 0 ? (
                     energyOffers.map((offer: EnergyTrade) => (
-                      <div key={offer.id} className="p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
+                      <div key={offer.id} className="p-4 border-2 border-green-200 rounded-xl hover:border-green-400 transition-all duration-200 hover:shadow-md bg-white">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-green-600">{offer.energyAmount} kWh available</p>
-                            <p className="text-sm text-gray-600">Household #{offer.sellerHouseholdId}</p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Created: {new Date(offer.createdAt).toLocaleString()}
-                            </p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                              <p className="font-bold text-green-700 text-lg">{offer.energyAmount} kWh</p>
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Available Now</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                              <HomeIcon className="h-4 w-4" />
+                              <span>Household #{offer.sellerHouseholdId}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <MapPin className="h-3 w-3" />
+                              <span>~2.3 km away</span>
+                              <span>•</span>
+                              <span>{new Date(offer.createdAt).toLocaleDateString()}</span>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-lg">₹{offer.pricePerKwh}/kWh</p>
-                            <div className="mt-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedTradeForDetails(offer);
-                                  setShowContactDialog(true);
-                                }}
-                                className="text-xs"
-                              >
-                                View Details
-                              </Button>
+                            <div className="bg-green-50 p-3 rounded-lg mb-3">
+                              <p className="text-sm text-gray-600">Price per kWh</p>
+                              <p className="font-bold text-2xl text-green-700">₹{offer.pricePerKwh}</p>
+                              <p className="text-xs text-gray-500">Total: ₹{(offer.energyAmount * offer.pricePerKwh).toFixed(2)}</p>
                             </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedTradeForDetails(offer);
+                                setShowContactDialog(true);
+                              }}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              Contact Seller
+                            </Button>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-3 border border-gray-200 rounded text-center text-gray-500">
-                      No energy offers available yet. Be the first to create one!
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Zap className="h-8 w-8 text-green-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-700 mb-2">No Energy Offers Yet</h4>
+                      <p className="text-sm text-gray-500 mb-4">Be the first to sell surplus solar energy!</p>
+                      <Button onClick={() => setShowCreateTradeDialog(true)} size="sm" variant="outline">
+                        Create First Offer
+                      </Button>
                     </div>
                   )}
                 </div>
               </Card>
               
-              <Card className="p-6">
+              <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <ArrowRightLeft className="h-5 w-5 text-blue-600" />
-                    Energy Demand Requests ({energyRequests.length})
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+                    </div>
+                    Energy Needed
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                      {energyRequests.length}
+                    </span>
                   </h3>
-                  <select 
-                    value={requestFilter} 
-                    onChange={(e) => setRequestFilter(e.target.value as 'all' | 'cheapest' | 'biggest')}
-                    className="text-sm border border-gray-300 rounded px-2 py-1"
-                  >
-                    <option value="all">All Requests</option>
-                    <option value="cheapest">Highest Price</option>
-                    <option value="biggest">Biggest Power</option>
-                  </select>
+                  <Select value={requestFilter} onValueChange={(value) => setRequestFilter(value as 'all' | 'cheapest' | 'biggest')}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Requests</SelectItem>
+                      <SelectItem value="cheapest">💰 Best Offer</SelectItem>
+                      <SelectItem value="biggest">⚡ Most Power</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-3">
                   {tradesLoading ? (
-                    <div className="p-3 border border-gray-200 rounded text-center text-gray-500">
-                      Loading energy requests...
+                    <div className="space-y-3">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="p-4 border border-gray-200 rounded-lg animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      ))}
                     </div>
                   ) : energyRequests.length > 0 ? (
                     energyRequests.map((request: EnergyTrade) => (
-                      <div key={request.id} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                      <div key={request.id} className="p-4 border-2 border-blue-200 rounded-xl hover:border-blue-400 transition-all duration-200 hover:shadow-md bg-white">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-blue-600">{request.energyAmount} kWh needed</p>
-                            <p className="text-sm text-gray-600">Household #{request.buyerHouseholdId}</p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Created: {new Date(request.createdAt).toLocaleString()}
-                            </p>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                              <p className="font-bold text-blue-700 text-lg">{request.energyAmount} kWh</p>
+                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Needed Now</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                              <HomeIcon className="h-4 w-4" />
+                              <span>Household #{request.buyerHouseholdId}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <MapPin className="h-3 w-3" />
+                              <span>~1.8 km away</span>
+                              <span>•</span>
+                              <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-lg">₹{request.pricePerKwh}/kWh</p>
-                            <div className="mt-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedTradeForDetails(request);
-                                  setShowContactDialog(true);
-                                }}
-                                className="text-xs"
-                              >
-                                View Details
-                              </Button>
+                            <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                              <p className="text-sm text-gray-600">Willing to pay</p>
+                              <p className="font-bold text-2xl text-blue-700">₹{request.pricePerKwh}</p>
+                              <p className="text-xs text-gray-500">Total: ₹{(request.energyAmount * request.pricePerKwh).toFixed(2)}</p>
                             </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedTradeForDetails(request);
+                                setShowContactDialog(true);
+                              }}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Contact Buyer
+                            </Button>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-3 border border-gray-200 rounded text-center text-gray-500">
-                      No energy requests at the moment. Check back during peak hours.
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ArrowRightLeft className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <h4 className="font-semibold text-gray-700 mb-2">No Energy Requests</h4>
+                      <p className="text-sm text-gray-500 mb-4">Be the first to request clean energy!</p>
+                      <Button onClick={() => setShowCreateTradeDialog(true)} size="sm" variant="outline">
+                        Create First Request
+                      </Button>
                     </div>
                   )}
                 </div>
               </Card>
             </div>
             
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">How Energy Trading Works</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <HomeIcon className="h-8 w-8 text-green-600" />
+            {/* Enhanced Information Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <div className="p-2 bg-purple-100 rounded-full">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
                   </div>
-                  <h4 className="font-semibold mb-2">Surplus Generation</h4>
-                  <p className="text-sm text-gray-600">When your solar panels produce more energy than you consume, create a sell offer.</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <ArrowRightLeft className="h-8 w-8 text-blue-600" />
+                  Market Insights
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                    <span className="text-sm font-medium">Peak Trading Hours</span>
+                    <span className="text-sm text-gray-600">6PM - 9PM</span>
                   </div>
-                  <h4 className="font-semibold mb-2">Smart Matching</h4>
-                  <p className="text-sm text-gray-600">Our AI automatically matches energy offers with nearby demand for optimal distribution.</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Zap className="h-8 w-8 text-purple-600" />
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                    <span className="text-sm font-medium">Average Price Range</span>
+                    <span className="text-sm text-gray-600">₹3.5 - ₹6.0/kWh</span>
                   </div>
-                  <h4 className="font-semibold mb-2">Instant Transfer</h4>
-                  <p className="text-sm text-gray-600">Energy is transferred instantly through the smart grid with automatic billing.</p>
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                    <span className="text-sm font-medium">Network Efficiency</span>
+                    <span className="text-sm text-green-600">{networkAnalytics?.efficiency?.networkEfficiency || "85"}%</span>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+              
+              <Card className="p-6">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                  </div>
+                  How Trading Works
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-sm">1</div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Create Your Offer</h4>
+                      <p className="text-xs text-gray-600">Set your energy amount and price</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">2</div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Smart Matching</h4>
+                      <p className="text-xs text-gray-600">AI finds the best local matches</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-sm">3</div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Instant Transfer</h4>
+                      <p className="text-xs text-gray-600">Automatic grid routing and billing</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         )}
 
@@ -809,7 +923,25 @@ export default function Dashboard() {
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+              
+              {/* Smart Price Recommendation */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  💡 Smart Pricing Recommendation
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-gray-600">Current Market Rate</p>
+                    <p className="font-bold text-blue-700">₹{marketData?.supply && marketData?.demand ? ((marketData.supply / marketData.demand) * 4.5).toFixed(1) : '4.5'}/kWh</p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-gray-600">Recommended Range</p>
+                    <p className="font-bold text-green-700">₹3.8 - ₹5.2/kWh</p>
+                  </div>
+                </div>
+              </div>
               <FormField
                 control={form.control}
                 name="tradeType"
@@ -891,30 +1023,75 @@ export default function Dashboard() {
                 name="pricePerKwh"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
+                    <FormLabel className="flex items-center gap-2">
                       {form.watch("tradeType") === "sell" 
-                        ? "Selling price per kWh (paise)" 
+                        ? "💰 Your Selling Price" 
                         : form.watch("tradeType") === "buy"
-                        ? "Maximum price you'll pay per kWh (paise)"
-                        : "Price per kWh (paise)"}
+                        ? "💳 Maximum You'll Pay"
+                        : "💱 Price per kWh"}
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        max="9999"
-                        placeholder={form.watch("tradeType") === "sell" 
-                          ? "e.g., 450 (₹4.50 per kWh)" 
-                          : form.watch("tradeType") === "buy"
-                          ? "e.g., 500 (₹5.00 per kWh)"
-                          : "e.g., 450"}
-                        data-testid="input-price-per-kwh"
-                        className="w-full"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="1"
+                              max="10"
+                              placeholder={form.watch("tradeType") === "sell" 
+                                ? "e.g., 4.5" 
+                                : form.watch("tradeType") === "buy"
+                                ? "e.g., 5.0"
+                                : "e.g., 4.5"}
+                              data-testid="input-price-per-kwh"
+                              className="w-full"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 rounded border">
+                          ₹/kWh
+                        </div>
+                      </div>
+                      {field.value > 0 && (
+                        <div className="flex gap-2 text-xs">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => field.onChange(3.8)}
+                            className="text-xs px-2 py-1"
+                          >
+                            Low: ₹3.8
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => field.onChange(4.5)}
+                            className="text-xs px-2 py-1"
+                          >
+                            Market: ₹4.5
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => field.onChange(5.2)}
+                            className="text-xs px-2 py-1"
+                          >
+                            Premium: ₹5.2
+                          </Button>
+                        </div>
+                      )}
+                      {field.value > 0 && (
+                        <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          💰 Total Value: ₹{((form.watch("energyAmount") || 0) * field.value).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
