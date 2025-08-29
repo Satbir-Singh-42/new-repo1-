@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1752411760242,
+      "tag": "0000_gifted_rage",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752470738797,
+      "tag": "0001_tan_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752484116623,
+      "tag": "0002_oval_christian_walker",
+      "breakpoints": true
+    }
+  ]
+}
