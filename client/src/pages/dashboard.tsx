@@ -210,9 +210,10 @@ export default function Dashboard() {
       return;
     }
 
-    // Set household IDs based on trade type
+    // Set household IDs based on trade type and convert price to cents
     const tradeData = {
       ...data,
+      pricePerKwh: Math.round(data.pricePerKwh * 100), // Convert rupees to cents for backend
       sellerHouseholdId: data.tradeType === 'sell' ? userHouseholdId : undefined,
       buyerHouseholdId: data.tradeType === 'buy' ? userHouseholdId : undefined,
     };
@@ -707,8 +708,8 @@ export default function Dashboard() {
                           <div className="text-right">
                             <div className="bg-green-50 p-3 rounded-lg mb-3">
                               <p className="text-sm text-gray-600">Price per kWh</p>
-                              <p className="font-bold text-2xl text-green-700">₹{offer.pricePerKwh}</p>
-                              <p className="text-xs text-gray-500">Total: ₹{(offer.energyAmount * offer.pricePerKwh).toFixed(2)}</p>
+                              <p className="font-bold text-2xl text-green-700">₹{(offer.pricePerKwh / 100).toFixed(2)}</p>
+                              <p className="text-xs text-gray-500">Total: ₹{(offer.energyAmount * (offer.pricePerKwh / 100)).toFixed(2)}</p>
                             </div>
                             <Button 
                               size="sm" 
@@ -795,8 +796,8 @@ export default function Dashboard() {
                           <div className="text-right">
                             <div className="bg-blue-50 p-3 rounded-lg mb-3">
                               <p className="text-sm text-gray-600">Willing to pay</p>
-                              <p className="font-bold text-2xl text-blue-700">₹{request.pricePerKwh}</p>
-                              <p className="text-xs text-gray-500">Total: ₹{(request.energyAmount * request.pricePerKwh).toFixed(2)}</p>
+                              <p className="font-bold text-2xl text-blue-700">₹{(request.pricePerKwh / 100).toFixed(2)}</p>
+                              <p className="text-xs text-gray-500">Total: ₹{(request.energyAmount * (request.pricePerKwh / 100)).toFixed(2)}</p>
                             </div>
                             <Button 
                               size="sm" 
@@ -1144,8 +1145,8 @@ export default function Dashboard() {
                   {selectedTradeForDetails.tradeType === 'sell' ? 'Energy Offer' : 'Energy Request'}
                 </h4>
                 <p><strong>Amount:</strong> {selectedTradeForDetails.energyAmount} kWh</p>
-                <p><strong>Price:</strong> ₹{selectedTradeForDetails.pricePerKwh}/kWh</p>
-                <p><strong>Total Value:</strong> ₹{(selectedTradeForDetails.energyAmount * selectedTradeForDetails.pricePerKwh).toFixed(2)}</p>
+                <p><strong>Price:</strong> ₹{(selectedTradeForDetails.pricePerKwh / 100).toFixed(2)}/kWh</p>
+                <p><strong>Total Value:</strong> ₹{(selectedTradeForDetails.energyAmount * (selectedTradeForDetails.pricePerKwh / 100)).toFixed(2)}</p>
                 <p><strong>Created:</strong> {new Date(selectedTradeForDetails.createdAt).toLocaleString()}</p>
               </div>
               
