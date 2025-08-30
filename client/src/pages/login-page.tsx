@@ -192,20 +192,6 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {/* Demo Credentials */}
-                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                  <h4 className="text-sm font-semibold text-green-800 mb-2">🔑 Demo Credentials</h4>
-                  <div className="space-y-2 text-xs text-green-700">
-                    <div className="bg-white p-2 rounded border">
-                      <p><strong>demo@solarsense.com</strong> / <strong>demo123</strong></p>
-                      <p className="text-green-600">Full trading profile with 8kW solar system</p>
-                    </div>
-                    <div className="bg-white p-2 rounded border">
-                      <p><strong>test@example.com</strong> / <strong>password123</strong></p>
-                      <p className="text-green-600">Basic testing account</p>
-                    </div>
-                  </div>
-                </div>
               </form>
             </CardContent>
           </Card>
