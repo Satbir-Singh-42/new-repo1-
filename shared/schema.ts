@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,7 +16,7 @@ export const users = pgTable("users", {
 
 export const households = pgTable("households", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   address: text("address").notNull(),
   solarCapacity: integer("solar_capacity_watts").notNull(), // in watts
@@ -28,7 +29,7 @@ export const households = pgTable("households", {
 
 export const energyReadings = pgTable("energy_readings", {
   id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull(),
+  householdId: integer("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   solarGeneration: integer("solar_generation_watts").notNull(), // current solar generation in watts
   energyConsumption: integer("energy_consumption_watts").notNull(), // current consumption in watts
@@ -39,8 +40,8 @@ export const energyReadings = pgTable("energy_readings", {
 
 export const energyTrades = pgTable("energy_trades", {
   id: serial("id").primaryKey(),
-  sellerHouseholdId: integer("seller_household_id"),
-  buyerHouseholdId: integer("buyer_household_id"),
+  sellerHouseholdId: integer("seller_household_id").references(() => households.id, { onDelete: "set null" }),
+  buyerHouseholdId: integer("buyer_household_id").references(() => households.id, { onDelete: "set null" }),
   energyAmount: integer("energy_amount_kwh").notNull(), // in kWh
   pricePerKwh: integer("price_per_kwh_cents").notNull(), // price in cents
   status: text("status").notNull().default('pending'), // 'pending', 'completed', 'cancelled'
@@ -51,7 +52,7 @@ export const energyTrades = pgTable("energy_trades", {
 
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
   sessionId: text("session_id"), // For non-authenticated users
   username: text("username").notNull(),
   message: text("message").notNull(),
@@ -59,6 +60,53 @@ export const chatMessages = pgTable("chat_messages", {
   category: text("category").default('general'), // 'energy', 'trading', 'optimization', 'general'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Define relationships between tables
+export const usersRelations = relations(users, ({ many }) => ({
+  households: many(households),
+  chatMessages: many(chatMessages),
+}));
+
+export const householdsRelations = relations(households, ({ one, many }) => ({
+  user: one(users, {
+    fields: [households.userId],
+    references: [users.id],
+  }),
+  energyReadings: many(energyReadings),
+  energyTradesSelling: many(energyTrades, {
+    relationName: "sellerTrades",
+  }),
+  energyTradesBuying: many(energyTrades, {
+    relationName: "buyerTrades",
+  }),
+}));
+
+export const energyReadingsRelations = relations(energyReadings, ({ one }) => ({
+  household: one(households, {
+    fields: [energyReadings.householdId],
+    references: [households.id],
+  }),
+}));
+
+export const energyTradesRelations = relations(energyTrades, ({ one }) => ({
+  sellerHousehold: one(households, {
+    fields: [energyTrades.sellerHouseholdId],
+    references: [households.id],
+    relationName: "sellerTrades",
+  }),
+  buyerHousehold: one(households, {
+    fields: [energyTrades.buyerHouseholdId],
+    references: [households.id],
+    relationName: "buyerTrades",
+  }),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  user: one(users, {
+    fields: [chatMessages.userId],
+    references: [users.id],
+  }),
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
