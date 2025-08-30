@@ -11,8 +11,15 @@ import { config } from "dotenv";
 config();
 
 function getDatabaseUrl(): string | null {
-  // Use DATABASE_URL environment variable directly
-  return process.env.DATABASE_URL || null;
+  // Use DATABASE_URL environment variable and clean it up
+  let dbUrl = process.env.DATABASE_URL || null;
+  if (dbUrl) {
+    // Remove psql command prefix and quotes if present
+    dbUrl = dbUrl.replace(/^psql\s*['"]*/, '').replace(/['"]*$/, '');
+    // Clean up any extra whitespace
+    dbUrl = dbUrl.trim();
+  }
+  return dbUrl;
 }
 
 export interface IStorage {
@@ -306,7 +313,7 @@ export class DatabaseStorage implements IStorage {
       } else {
         // Fallback to memory store if database not available
         const MemoryStore = await import("memorystore").then(m => m.default);
-        this.sessionStore = new MemoryStore(session)({
+        this.sessionStore = new (MemoryStore(session))({
           checkPeriod: 86400000, // 24 hours
         });
         console.log('Memory session store initialized (fallback)');
@@ -314,7 +321,7 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.warn('Session store initialization failed, using memory fallback:', error);
       const MemoryStore = await import("memorystore").then(m => m.default);
-      this.sessionStore = new MemoryStore(session)({
+      this.sessionStore = new (MemoryStore(session))({
         checkPeriod: 86400000, // 24 hours
       });
     }

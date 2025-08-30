@@ -10,10 +10,15 @@ let db: any = null;
 let pool: any = null;
 
 function getDatabaseUrl(): string | null {
-  // Use the specific database URL provided
-  const databaseUrl = process.env.DATABASE_URL;
+  // Use the specific database URL provided and clean it up
+  let databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl) {
     console.log('Found DATABASE_URL:', databaseUrl.substring(0, 60) + '...');
+    // Remove psql command prefix and quotes if present
+    databaseUrl = databaseUrl.replace(/^psql\s*['"]*/g, '').replace(/['"\s]*$/g, '');
+    // Clean up any extra whitespace
+    databaseUrl = databaseUrl.trim();
+    console.log('Using DATABASE_URL:', databaseUrl.substring(0, 50) + '...');
     return databaseUrl;
   }
   console.log('DATABASE_URL not found in environment');
