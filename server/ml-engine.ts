@@ -402,6 +402,12 @@ export class MLEnergyEngine {
 
   private calculateGridStability(networkState: NetworkState): number {
     const totalBalance = networkState.totalGeneration - networkState.totalDemand;
+    
+    // Prevent division by zero
+    if (networkState.totalDemand === 0) {
+      return networkState.totalGeneration > 0 ? 1.0 : 0.5; // Perfect if generating, neutral if no activity
+    }
+    
     const balanceRatio = Math.abs(totalBalance) / networkState.totalDemand;
     
     // Stability score (0-1, higher is better)
@@ -463,6 +469,12 @@ export class MLEnergyEngine {
 
   private calculateResilienceScore(allHouseholds: Household[], affectedCount: number): number {
     const networkSize = allHouseholds.length;
+    
+    // Handle empty network case
+    if (networkSize === 0) {
+      return 0.5; // Neutral score for empty network
+    }
+    
     const distributedGeneration = allHouseholds.filter(h => (h.solarCapacity || 0) > 0).length;
     const batteryBackup = allHouseholds.filter(h => (h.batteryCapacity || 0) > 0).length;
     
