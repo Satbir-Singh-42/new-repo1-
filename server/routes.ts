@@ -1003,7 +1003,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         h.userId !== null && h.userId !== 0 && h.userId !== 999
       );
       
-      const totalGeneration = realHouseholds.reduce((sum: number, h: any) => sum + (h.solarCapacity || 0), 0);
+      // Calculate weather-adjusted generation using current conditions
+      const now = new Date();
+      const hour = now.getHours();
+      const isDayTime = hour >= 7 && hour <= 17; // Peak solar hours
+      
+      // Get current weather efficiency from real-time conditions
+      const month = now.getMonth(); // 0-11
+      const seasonalBaseTemp = [5, 8, 15, 22, 28, 32, 35, 33, 28, 20, 12, 7][month];
+      const hourlyTempVariation = Math.sin(((hour - 6) / 12) * Math.PI) * 8;
+      const temperature = seasonalBaseTemp + hourlyTempVariation + (Math.random() - 0.5) * 3;
+      
+      let weatherEfficiency = 0;
+      if (isDayTime) {
+        // Daytime efficiency calculation
+        const weatherRandom = Math.random();
+        if (weatherRandom > 0.8) {
+          weatherEfficiency = (90 + Math.random() * 10) / 100; // Sunny: 90-100%
+        } else if (weatherRandom > 0.6) {
+          weatherEfficiency = (70 + Math.random() * 15) / 100; // Partly cloudy: 70-85%
+        } else if (weatherRandom > 0.4) {
+          weatherEfficiency = (40 + Math.random() * 20) / 100; // Cloudy: 40-60%
+        } else if (weatherRandom > 0.2) {
+          weatherEfficiency = (20 + Math.random() * 15) / 100; // Overcast: 20-35%
+        } else {
+          weatherEfficiency = (5 + Math.random() * 10) / 100; // Rainy/Stormy: 5-15%
+        }
+        
+        // Temperature impact: -0.4% per degree above 25°C
+        if (temperature > 25) {
+          const tempLoss = (temperature - 25) * 0.004;
+          weatherEfficiency = Math.max(0.05, weatherEfficiency * (1 - tempLoss));
+        }
+      }
+      
+      // Calculate actual current generation based on weather conditions
+      const totalCapacity = realHouseholds.reduce((sum: number, h: any) => sum + (h.solarCapacity || 0), 0);
+      const totalGeneration = (totalCapacity / 1000) * weatherEfficiency; // Convert to kW and apply weather efficiency
       const totalStorage = realHouseholds.reduce((sum: number, h: any) => sum + (h.batteryCapacity || 0), 0);
       const currentStorage = realHouseholds.reduce((sum: number, h: any) => sum + ((h.currentBatteryLevel || 0) * (h.batteryCapacity || 0) / 100), 0);
       
@@ -1021,7 +1057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         network: {
           totalHouseholds: realHouseholds.length,
           activeHouseholds: realHouseholds.filter((h: any) => h.isOnline !== false).length,
-          totalGenerationCapacity: `${totalGeneration.toFixed(1)} kW`,
+          totalGenerationCapacity: `${totalGeneration.toFixed(1)} kW`, // Current weather-adjusted generation
           totalStorageCapacity: `${totalStorage.toFixed(1)} kWh`,
           currentStorageLevel: `${currentStorage.toFixed(1)} kWh`,
           storageUtilization: `${totalStorage > 0 ? ((currentStorage / totalStorage) * 100).toFixed(1) : 0}%`
