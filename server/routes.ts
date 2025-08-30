@@ -207,61 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Clear all users except testing user (development only)
-  app.post("/api/clear-users", async (_req, res) => {
-    try {
-      await storage.clearAllUsersExceptTesting();
-      res.json({ 
-        success: true, 
-        message: "All users cleared except testing user",
-        testing_user: {
-          username: "test_user",
-          email: "test@example.com",
-          password: "password123"
-        }
-      });
-    } catch (error) {
-      console.error('Clear users failed:', error);
-      res.status(500).json({ 
-        error: "Failed to clear users", 
-        details: error instanceof Error ? error.message : "Unknown error" 
-      });
-    }
-  });
 
-  // Fix testing user password hash (development only)
-  app.post("/api/fix-test-user", async (_req, res) => {
-    try {
-      const { hashPassword } = await import("./auth");
-      const properHash = await hashPassword("password123");
-      
-      // Update the testing user with proper scrypt hash
-      if ('updateUserPassword' in storage) {
-        await (storage as any).updateUserPassword("test@example.com", properHash);
-      } else {
-        // For direct database access
-        const { db } = await import("./db");
-        const { users } = await import("@shared/schema");
-        const { eq } = await import("drizzle-orm");
-        
-        await db.update(users)
-          .set({ password: properHash })
-          .where(eq(users.email, "test@example.com"));
-      }
-      
-      res.json({ 
-        success: true, 
-        message: "Testing user password hash fixed",
-        new_hash: properHash
-      });
-    } catch (error) {
-      console.error('Fix test user failed:', error);
-      res.status(500).json({ 
-        error: "Failed to fix test user", 
-        details: error instanceof Error ? error.message : "Unknown error" 
-      });
-    }
-  });
 
   // Debug endpoint to check database status (development only)
   app.get("/api/debug/database", async (_req, res) => {

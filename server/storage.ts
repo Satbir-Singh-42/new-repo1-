@@ -37,7 +37,6 @@ export interface IStorage {
   getChatMessagesByUser(userId: number, limit?: number): Promise<ChatMessage[]>;
   getChatMessagesBySession(sessionId: string, limit?: number): Promise<ChatMessage[]>;
   clearSessionData(sessionId: string): Promise<void>;
-  clearAllUsersExceptTesting(): Promise<void>;
   sessionStore: any;
 }
 
@@ -72,65 +71,10 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000, // 24 hours
     });
     
-    // Add demo credentials for easy website access
-    this.addTestingUser();
-    this.addDemoCredentials();
+    // No demo credentials - production ready
   }
 
-  private async addTestingUser() {
-    // Add a testing user for development
-    const { hashPassword } = await import("./auth");
-    const hashedPassword = await hashPassword("password123");
-    
-    const testUser: User = {
-      id: 1,
-      username: 'test_user',
-      email: 'test@example.com',
-      password: hashedPassword,
-      phone: null,
-      state: null,
-      district: null,
-      createdAt: new Date()
-    };
-    this.users.set(testUser.id, testUser);
-    this.currentUserId = 2; // Next user will get ID 2
-  }
 
-  private async addDemoCredentials() {
-    // Create demo user with complete trading profile
-    const { hashPassword } = await import("./auth");
-    const hashedPassword = await hashPassword("demo123");
-    
-    const demoUser: User = {
-      id: 2,
-      username: 'demo_trader',
-      email: 'demo@solarsense.com',
-      password: hashedPassword,
-      phone: '+1-555-0123',
-      state: 'California',
-      district: 'Los Angeles',
-      createdAt: new Date()
-    };
-    this.users.set(demoUser.id, demoUser);
-
-    // Create demo household for trading
-    const demoHousehold: Household = {
-      id: 1,
-      userId: demoUser.id,
-      name: 'Demo Solar Home',
-      address: '123 Solar Street, Los Angeles, CA',
-      solarCapacity: 8000, // 8kW system
-      batteryCapacity: 15, // 15kWh Tesla Powerwall
-      currentBatteryLevel: 85,
-      isOnline: true,
-      coordinates: null,
-      createdAt: new Date()
-    };
-    this.households.set(demoHousehold.id, demoHousehold);
-    
-    this.currentUserId = 3; // Next user will get ID 3
-    this.currentHouseholdId = 2; // Next household will get ID 2
-  }
 
   private addInitialChatMessages() {
     // No fake messages - chat starts empty for authentic user experience
@@ -327,26 +271,6 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async clearAllUsersExceptTesting(): Promise<void> {
-    // Keep only the testing user (ID: 1)
-    const testUser = this.users.get(1);
-    this.users.clear();
-    if (testUser) {
-      this.users.set(1, testUser);
-    }
-    // Reset user ID counter to 2
-    this.currentUserId = 2;
-    
-    // Also clear all energy data and chat messages to start fresh
-    this.households.clear();
-    this.energyReadings.clear();
-    this.energyTrades.clear();
-    this.chatMessages.clear();
-    this.currentHouseholdId = 1;
-    this.currentEnergyReadingId = 1;
-    this.currentEnergyTradeId = 1;
-    this.currentChatMessageId = 1;
-  }
 
   // Helper method to get current storage status
   getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
@@ -364,8 +288,7 @@ export class DatabaseStorage implements IStorage {
     // Initialize session store after database connection
     this.initializeSessionStore();
     
-    // Create testing user on initialization
-    this.addTestingUser().catch(console.error);
+    // Production ready - no demo credentials
   }
 
   private async initializeSessionStore() {
@@ -397,38 +320,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  private async addTestingUser() {
-    try {
-      const db = await this.getDb();
-      
-      // Check if testing user already exists
-      const existingUser = await this.getUserByEmail("test@example.com");
-      if (existingUser) {
-        console.log('Testing user already exists in database');
-        return;
-      }
-
-      // Create testing user with hashed password using the same method as auth.ts
-      const { scrypt, randomBytes } = await import("crypto");
-      const { promisify } = await import("util");
-      const scryptAsync = promisify(scrypt);
-      
-      const salt = randomBytes(16).toString("hex");
-      const buf = (await scryptAsync("password123", salt, 64)) as Buffer;
-      const hashedPassword = `${buf.toString("hex")}.${salt}`;
-      
-      const testUser: InsertUser = {
-        username: "test_user",
-        email: "test@example.com",
-        password: hashedPassword,
-      };
-
-      await this.createUser(testUser);
-      console.log('Testing user created in database: test@example.com / password123');
-    } catch (error) {
-      console.warn('Failed to create testing user:', error);
-    }
-  }
 
   private async getPool() {
     const { pool } = await import("./db");
@@ -644,19 +535,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(chatMessages).where(eq(chatMessages.sessionId, sessionId));
   }
 
-  async clearAllUsersExceptTesting(): Promise<void> {
-    const db = await this.getDb();
-    // Delete all users (including testing user to recreate with proper password hash)
-    await db.delete(users);
-    // Clear all energy data and chat messages
-    await db.delete(households);
-    await db.delete(energyReadings);
-    await db.delete(energyTrades);
-    await db.delete(chatMessages);
-    
-    // Recreate testing user with proper scrypt password hash
-    await this.addTestingUser();
-  }
 
   // Helper method to get current storage status
   getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
@@ -972,18 +850,6 @@ class HybridStorage implements IStorage {
     await this.memoryStorage.clearSessionData(sessionId);
   }
 
-  async clearAllUsersExceptTesting(): Promise<void> {
-    if (this.isDatabaseAvailable && this.databaseStorage) {
-      try {
-        await this.databaseStorage.clearAllUsersExceptTesting();
-        return;
-      } catch (error) {
-        console.warn('Database clearAllUsersExceptTesting failed, falling back to memory:', error);
-        this.isDatabaseAvailable = false;
-      }
-    }
-    await this.memoryStorage.clearAllUsersExceptTesting();
-  }
 
   // Helper method to get current storage status
   getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
